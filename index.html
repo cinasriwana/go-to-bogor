@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Step Around Bogor - AR Tour Guide</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/ar.js@3.4.5/three.js/ar.js"></script>
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/arjs@3.4.5/aframe/aframe-ar.js"></script>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ar.js@3.4.5/aframe/aframe-ar.js"></script>
     <style>
         * {
             margin: 0;
@@ -19,7 +17,7 @@
             width: 100%;
             height: 100%;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #1a1a1a;
+            background: #000;
             overflow: hidden;
         }
 
@@ -107,20 +105,19 @@
             }
         }
 
-        /* ===== AR SCENE ===== */
+        /* ===== AR SCENE CONTAINER ===== */
         #ar-scene {
             width: 100%;
             height: 100%;
             position: fixed;
             top: 0;
             left: 0;
-            z-index: 100;
+            z-index: 0;
         }
 
         a-scene {
-            position: absolute;
-            top: 0;
-            left: 0;
+            width: 100% !important;
+            height: 100% !important;
         }
 
         /* ===== NAVIGATION OVERLAY ===== */
@@ -272,40 +269,26 @@
             display: block;
         }
 
-        /* ===== LOADING STATE ===== */
-        .loading-indicator {
+        /* ===== ERROR MESSAGE ===== */
+        .error-message {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.85);
-            color: #beead9;
+            background: rgba(0, 0, 0, 0.9);
+            color: #ff6b6b;
             padding: 30px;
             border-radius: 12px;
             z-index: 150;
             text-align: center;
             display: none;
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(190, 234, 217, 0.2);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            max-width: 80%;
         }
 
-        .loading-indicator.active {
+        .error-message.active {
             display: block;
-        }
-
-        .spinner {
-            border: 3px solid rgba(251, 176, 59, 0.2);
-            border-top: 3px solid #fbb03b;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
         }
 
         /* ===== RESPONSIVE ===== */
@@ -354,43 +337,33 @@
 <body>
     <!-- SPLASH SCREEN -->
     <div id="splash-screen">
-        <img src="assets/logo.jpeg" class="splash-logo"></img>
+        <div class="splash-logo">🌿 Step Around Bogor</div>
         <div class="splash-text">Your Virtual Tour Guide Solution Using AR</div>
         <div class="progress-container">
             <div class="progress-bar"></div>
         </div>
     </div>
 
-    <!-- LOADING INDICATOR -->
-    <div class="loading-indicator">
-        <div class="spinner"></div>
-        <div>Initializing AR Camera...</div>
-    </div>
+    <!-- ERROR MESSAGE -->
+    <div class="error-message" id="errorMessage"></div>
 
     <!-- AR SCENE -->
     <div id="ar-scene">
         <a-scene
             embedded
-            arjs="sourceType: webcam; debugUIEnabled: false;"
-            renderer="antialias: true; alpha: true; precision: mediump;"
+            arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono; matrixCodeType: 3x3;"
+            renderer="antialias: true; alpha: true; precision: mediump; logarithmicDepthBuffer: true;"
+            vr-mode-ui="enabled: false"
             id="arScene">
             
-            <!-- TAMAN MEXICO -->
-            <a-marker type="pattern" url="logomexico.patt" id="mexico-marker">
-                <a-box position="0 0.5 0" scale="0.5 0.5 0.5" rotation="0 45 0" color="#fbb03b"></a-box>
+            <!-- SIMPLE MARKER FOR TESTING -->
+            <a-marker type="pattern" patternUrl="logomexico.patt" id="test-marker">
+                <a-box position="0 0 0" scale="1 1 1" rotation="0 45 0" color="#fbb03b" animation="property: rotation; to: 0 360 0; dur: 2000; loop: true"></a-box>
+                <a-text value="TAMAN MEXICO" position="0 1.2 0" align="center" color="#fff" scale="0.7 0.7 0.7"></a-text>
             </a-marker>
 
-            <!-- GRIYA ANGGREK -->
-            <a-marker type="pattern" url="anggrek.patt" id="anggrek-marker">
-                <a-box position="0 0.5 0" scale="0.5 0.5 0.5" rotation="0 45 0" color="#beead9"></a-box>
-            </a-marker>
-
-            <!-- ISTANA BOGOR -->
-            <a-marker type="pattern" url="https://raw.githubusercontent.com/jeromeetienne/AR.js/master/data/images/marker-basic.patt" id="istana-marker">
-                <a-box position="0 0.5 0" scale="0.5 0.5 0.5" rotation="0 45 0" color="#2d5f4f"></a-box>
-            </a-marker>
-
-            <a-entity camera></a-entity>
+            <!-- CAMERA -->
+            <a-camera position="0 0 0"></a-camera>
         </a-scene>
     </div>
 
@@ -413,7 +386,7 @@
 
     <!-- BOTTOM INFO -->
     <div class="bottom-info" id="bottomInfo">
-        📍 Scan marker untuk memulai tur
+        📍 Scan marker (HIRO pattern) untuk memulai tur
     </div>
 
     <script>
@@ -421,24 +394,10 @@
         const destinations = {
             mexico: {
                 name: 'TAMAN MEXICO',
-                description: 'Mexican Garden adalah wahana edukasi untuk koleksi, konservasi, dan risky berbagai jenis kaktus dan sukulen. Pengunjung dapat melihat koleksi kaktus terbesar di Indonesia dan mempelajari adaptasi tumbuhan di iklim arid.',
+                description: 'Mexican Garden adalah wahana edukasi untuk koleksi, konservasi, dan riset berbagai jenis kaktus dan sukulen. Pengunjung dapat melihat koleksi kaktus terbesar di Indonesia dan mempelajari adaptasi tumbuhan di iklim arid.',
                 lat: -6.7944,
                 lng: 106.7945,
                 direction: 'Turn Right 30m'
-            },
-            anggrek: {
-                name: 'GRIYA ANGGREK',
-                description: 'Griya Anggrek adalah wahana wisata edukasi yang didedikasikan untuk koleksi, konservasi, dan riset berbagai jenis anggrek. Terdapat lebih dari 3000 spesies anggrek baik asli Indonesia maupun hibrida dengan bunga yang sangat indah.',
-                lat: -6.7935,
-                lng: 106.7940,
-                direction: 'Turn Left 25m'
-            },
-            istana: {
-                name: 'ISTANA BOGOR',
-                description: 'Istana Bogor adalah istana presiden yang terletak di dalam kompleks Kebun Raya Bogor. Bangunan bersejarah ini menjadi pusat administrasi Kebun Raya dan memiliki arsitektur yang elegan dengan taman yang memukau.',
-                lat: -6.7950,
-                lng: 106.7950,
-                direction: 'Go Straight 50m'
             }
         };
 
@@ -453,8 +412,11 @@
                     (position) => {
                         userLat = position.coords.latitude;
                         userLng = position.coords.longitude;
+                        console.log('Geolocation obtained:', userLat, userLng);
                     },
-                    (error) => console.warn('Geolocation Error:', error),
+                    (error) => {
+                        console.warn('Geolocation Error:', error);
+                    },
                     { enableHighAccuracy: true, timeout: 5000 }
                 );
             }
@@ -479,55 +441,68 @@
             }
         }
 
-        // ===== SPLASH SCREEN & ANTI-STUCK MECHANISM =====
+        // ===== SPLASH SCREEN & AR INITIALIZATION =====
         const splashScreen = document.getElementById('splash-screen');
-        const loadingIndicator = document.querySelector('.loading-indicator');
         const arScene = document.getElementById('arScene');
+        const errorMessage = document.getElementById('errorMessage');
+        let sceneLoaded = false;
 
         function hideSplash() {
+            console.log('Hiding splash screen');
             splashScreen.classList.add('hidden');
-            loadingIndicator.classList.remove('active');
             document.getElementById('bottomInfo').classList.add('active');
             getGeolocation();
             setInterval(updateDistance, 1000);
         }
 
-        // Anti-stuck: Listen untuk ar-scene ready event
+        // Watch untuk scene render mulai (anti-stuck mechanism)
         arScene.addEventListener('loaded', () => {
-            console.log('AR Scene Loaded');
-            setTimeout(hideSplash, 3500);
+            console.log('AR Scene loaded event fired');
+            sceneLoaded = true;
         });
 
-        // Fallback timeout: Jika scene tidak loaded dalam 4 detik
+        // Detection saat scene mulai render
+        arScene.addEventListener('renderstart', () => {
+            console.log('AR Scene render started');
+            if (!sceneLoaded && !splashScreen.classList.contains('hidden')) {
+                setTimeout(hideSplash, 1000);
+            }
+        });
+
+        // Fallback: Force hide splash setelah 3.5 detik
         setTimeout(() => {
             if (!splashScreen.classList.contains('hidden')) {
-                console.warn('AR Scene timeout, forcing splash hide');
+                console.log('Splash timeout - forcing hide');
                 hideSplash();
             }
-        }, 4000);
+        }, 3500);
+
+        // Error handling
+        arScene.addEventListener('error', (e) => {
+            console.error('AR Scene Error:', e);
+            showError('Camera tidak dapat diakses. Pastikan Anda memberikan izin akses kamera.');
+        });
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('active');
+            splashScreen.classList.add('hidden');
+        }
 
         // ===== MARKER DETECTION =====
-        document.getElementById('mexico-marker').addEventListener('markerFound', () => {
+        const testMarker = document.getElementById('test-marker');
+
+        testMarker.addEventListener('markerFound', () => {
+            console.log('Marker found');
             currentDestination = 'mexico';
             updatePanels('mexico');
         });
 
-        document.getElementById('anggrek-marker').addEventListener('markerFound', () => {
-            currentDestination = 'anggrek';
-            updatePanels('anggrek');
-        });
-
-        document.getElementById('istana-marker').addEventListener('markerFound', () => {
-            currentDestination = 'istana';
-            updatePanels('istana');
-        });
-
-        ['mexico-marker', 'anggrek-marker', 'istana-marker'].forEach(id => {
-            document.getElementById(id).addEventListener('markerLost', () => {
-                document.getElementById('navOverlay').classList.remove('active');
-                document.getElementById('educationPanel').classList.remove('active');
-                currentDestination = null;
-            });
+        testMarker.addEventListener('markerLost', () => {
+            console.log('Marker lost');
+            document.getElementById('navOverlay').classList.remove('active');
+            document.getElementById('educationPanel').classList.remove('active');
+            currentDestination = null;
         });
 
         // ===== UPDATE PANELS =====
@@ -549,6 +524,9 @@
                 window.open(mapsUrl, '_blank');
             }
         });
+
+        // Console logging
+        console.log('Step Around Bogor initialized');
     </script>
 </body>
 </html>
