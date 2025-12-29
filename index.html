@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Step Around Bogor - AR Tour Guide</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ar.js@3.4.5/three.js/ar.js"></script>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/arjs@3.4.5/aframe/aframe-ar.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            overflow: hidden;
+        }
+
+        /* ===== SPLASH SCREEN ===== */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #beead9 0%, #fff 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 1;
+            transition: opacity 0.5s ease-out;
+        }
+
+        #splash-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .splash-logo {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: #2d5f4f;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .splash-text {
+            font-size: 1.3rem;
+            color: #555;
+            margin-bottom: 3rem;
+            font-weight: 300;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .progress-container {
+            width: 300px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            animation: fadeInUp 0.8s ease-out 0.4s both;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #fbb03b 0%, #beead9 100%);
+            width: 0%;
+            animation: progress 3.5s ease-in-out forwards;
+        }
+
+        @keyframes progress {
+            0% { width: 0%; }
+            50% { width: 70%; }
+            100% { width: 100%; }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== AR SCENE ===== */
+        #ar-scene {
+            width: 100%;
+            height: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 100;
+        }
+
+        a-scene {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* ===== NAVIGATION OVERLAY ===== */
+        .nav-overlay {
+            position: fixed;
+            top: 30px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.75);
+            color: white;
+            padding: 20px 25px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            z-index: 200;
+            display: none;
+            animation: slideIn 0.4s ease-out;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-overlay.active {
+            display: block;
+        }
+
+        .nav-direction {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #fbb03b;
+            letter-spacing: 0.5px;
+        }
+
+        .distance-info {
+            font-size: 0.95rem;
+            color: #beead9;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .distance-value {
+            font-weight: 700;
+            color: #fff;
+            font-size: 1.1rem;
+        }
+
+        .map-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #fbb03b 0%, #beead9 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(251, 176, 59, 0.3);
+            font-size: 1.3rem;
+        }
+
+        .map-icon:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(251, 176, 59, 0.5);
+        }
+
+        /* ===== EDUCATION PANEL ===== */
+        .education-panel {
+            position: fixed;
+            right: 20px;
+            bottom: 30px;
+            width: 320px;
+            max-height: 350px;
+            background: rgba(45, 95, 79, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            z-index: 200;
+            display: none;
+            animation: slideInRight 0.4s ease-out;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(190, 234, 217, 0.2);
+            overflow-y: auto;
+        }
+
+        .education-panel.active {
+            display: block;
+        }
+
+        .panel-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #fbb03b;
+            margin-bottom: 12px;
+            border-bottom: 2px solid #beead9;
+            padding-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .panel-content {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #e8f4f0;
+            text-align: justify;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* ===== BOTTOM INFO ===== */
+        .bottom-info {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: #beead9;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            z-index: 200;
+            display: none;
+            border: 1px solid rgba(190, 234, 217, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .bottom-info.active {
+            display: block;
+        }
+
+        /* ===== LOADING STATE ===== */
+        .loading-indicator {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.85);
+            color: #beead9;
+            padding: 30px;
+            border-radius: 12px;
+            z-index: 150;
+            text-align: center;
+            display: none;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(190, 234, 217, 0.2);
+        }
+
+        .loading-indicator.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid rgba(251, 176, 59, 0.2);
+            border-top: 3px solid #fbb03b;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .splash-logo {
+                font-size: 2.5rem;
+            }
+
+            .splash-text {
+                font-size: 1rem;
+            }
+
+            .nav-overlay {
+                top: 20px;
+                left: 15px;
+                padding: 15px 18px;
+                width: auto;
+                max-width: 90%;
+            }
+
+            .education-panel {
+                right: 15px;
+                bottom: 20px;
+                width: 85%;
+                max-height: 40vh;
+            }
+
+            .progress-container {
+                width: 250px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .education-panel {
+                width: 90%;
+                padding: 15px;
+            }
+
+            .nav-overlay {
+                padding: 12px 15px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- SPLASH SCREEN -->
+    <div id="splash-screen">
+        <img src="assets/logo.jpeg" class="splash-logo"></img>
+        <div class="splash-text">Your Virtual Tour Guide Solution Using AR</div>
+        <div class="progress-container">
+            <div class="progress-bar"></div>
+        </div>
+    </div>
+
+    <!-- LOADING INDICATOR -->
+    <div class="loading-indicator">
+        <div class="spinner"></div>
+        <div>Initializing AR Camera...</div>
+    </div>
+
+    <!-- AR SCENE -->
+    <div id="ar-scene">
+        <a-scene
+            embedded
+            arjs="sourceType: webcam; debugUIEnabled: false;"
+            renderer="antialias: true; alpha: true; precision: mediump;"
+            id="arScene">
+            
+            <!-- TAMAN MEXICO -->
+            <a-marker type="pattern" url="logomexico.patt" id="mexico-marker">
+                <a-box position="0 0.5 0" scale="0.5 0.5 0.5" rotation="0 45 0" color="#fbb03b"></a-box>
+            </a-marker>
+
+            <!-- GRIYA ANGGREK -->
+            <a-marker type="pattern" url="anggrek.patt" id="anggrek-marker">
+                <a-box position="0 0.5 0" scale="0.5 0.5 0.5" rotation="0 45 0" color="#beead9"></a-box>
+            </a-marker>
+
+            <!-- ISTANA BOGOR -->
+            <a-marker type="pattern" url="https://raw.githubusercontent.com/jeromeetienne/AR.js/master/data/images/marker-basic.patt" id="istana-marker">
+                <a-box position="0 0.5 0" scale="0.5 0.5 0.5" rotation="0 45 0" color="#2d5f4f"></a-box>
+            </a-marker>
+
+            <a-entity camera></a-entity>
+        </a-scene>
+    </div>
+
+    <!-- NAVIGATION OVERLAY -->
+    <div class="nav-overlay" id="navOverlay">
+        <div class="nav-direction" id="directionText">Turn Right 30m</div>
+        <div class="distance-info">
+            Distance: <span class="distance-value" id="distanceValue">0.5 km</span>
+        </div>
+        <div class="map-icon" id="mapIcon" title="Open in Google Maps">🗺️</div>
+    </div>
+
+    <!-- EDUCATION PANEL -->
+    <div class="education-panel" id="educationPanel">
+        <div class="panel-title" id="panelTitle">TAMAN MEXICO</div>
+        <div class="panel-content" id="panelContent">
+            Mexican Garden adalah wahana edukasi untuk koleksi, konservasi, dan riset berbagai jenis kaktus dan sukulen.
+        </div>
+    </div>
+
+    <!-- BOTTOM INFO -->
+    <div class="bottom-info" id="bottomInfo">
+        📍 Scan marker untuk memulai tur
+    </div>
+
+    <script>
+        // ===== DATA DESTINASI =====
+        const destinations = {
+            mexico: {
+                name: 'TAMAN MEXICO',
+                description: 'Mexican Garden adalah wahana edukasi untuk koleksi, konservasi, dan risky berbagai jenis kaktus dan sukulen. Pengunjung dapat melihat koleksi kaktus terbesar di Indonesia dan mempelajari adaptasi tumbuhan di iklim arid.',
+                lat: -6.7944,
+                lng: 106.7945,
+                direction: 'Turn Right 30m'
+            },
+            anggrek: {
+                name: 'GRIYA ANGGREK',
+                description: 'Griya Anggrek adalah wahana wisata edukasi yang didedikasikan untuk koleksi, konservasi, dan riset berbagai jenis anggrek. Terdapat lebih dari 3000 spesies anggrek baik asli Indonesia maupun hibrida dengan bunga yang sangat indah.',
+                lat: -6.7935,
+                lng: 106.7940,
+                direction: 'Turn Left 25m'
+            },
+            istana: {
+                name: 'ISTANA BOGOR',
+                description: 'Istana Bogor adalah istana presiden yang terletak di dalam kompleks Kebun Raya Bogor. Bangunan bersejarah ini menjadi pusat administrasi Kebun Raya dan memiliki arsitektur yang elegan dengan taman yang memukau.',
+                lat: -6.7950,
+                lng: 106.7950,
+                direction: 'Go Straight 50m'
+            }
+        };
+
+        // ===== GEOLOCATION & DISTANCE ===== 
+        let userLat = null;
+        let userLng = null;
+        let currentDestination = null;
+
+        function getGeolocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        userLat = position.coords.latitude;
+                        userLng = position.coords.longitude;
+                    },
+                    (error) => console.warn('Geolocation Error:', error),
+                    { enableHighAccuracy: true, timeout: 5000 }
+                );
+            }
+        }
+
+        function calculateDistance(lat1, lng1, lat2, lng2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        function updateDistance() {
+            if (userLat && userLng && currentDestination) {
+                const dest = destinations[currentDestination];
+                const distance = calculateDistance(userLat, userLng, dest.lat, dest.lng);
+                document.getElementById('distanceValue').textContent = distance.toFixed(2) + ' km';
+            }
+        }
+
+        // ===== SPLASH SCREEN & ANTI-STUCK MECHANISM =====
+        const splashScreen = document.getElementById('splash-screen');
+        const loadingIndicator = document.querySelector('.loading-indicator');
+        const arScene = document.getElementById('arScene');
+
+        function hideSplash() {
+            splashScreen.classList.add('hidden');
+            loadingIndicator.classList.remove('active');
+            document.getElementById('bottomInfo').classList.add('active');
+            getGeolocation();
+            setInterval(updateDistance, 1000);
+        }
+
+        // Anti-stuck: Listen untuk ar-scene ready event
+        arScene.addEventListener('loaded', () => {
+            console.log('AR Scene Loaded');
+            setTimeout(hideSplash, 3500);
+        });
+
+        // Fallback timeout: Jika scene tidak loaded dalam 4 detik
+        setTimeout(() => {
+            if (!splashScreen.classList.contains('hidden')) {
+                console.warn('AR Scene timeout, forcing splash hide');
+                hideSplash();
+            }
+        }, 4000);
+
+        // ===== MARKER DETECTION =====
+        document.getElementById('mexico-marker').addEventListener('markerFound', () => {
+            currentDestination = 'mexico';
+            updatePanels('mexico');
+        });
+
+        document.getElementById('anggrek-marker').addEventListener('markerFound', () => {
+            currentDestination = 'anggrek';
+            updatePanels('anggrek');
+        });
+
+        document.getElementById('istana-marker').addEventListener('markerFound', () => {
+            currentDestination = 'istana';
+            updatePanels('istana');
+        });
+
+        ['mexico-marker', 'anggrek-marker', 'istana-marker'].forEach(id => {
+            document.getElementById(id).addEventListener('markerLost', () => {
+                document.getElementById('navOverlay').classList.remove('active');
+                document.getElementById('educationPanel').classList.remove('active');
+                currentDestination = null;
+            });
+        });
+
+        // ===== UPDATE PANELS =====
+        function updatePanels(destination) {
+            const dest = destinations[destination];
+            document.getElementById('directionText').textContent = dest.direction;
+            document.getElementById('panelTitle').textContent = dest.name;
+            document.getElementById('panelContent').textContent = dest.description;
+            document.getElementById('navOverlay').classList.add('active');
+            document.getElementById('educationPanel').classList.add('active');
+            updateDistance();
+        }
+
+        // ===== GOOGLE MAPS LINK =====
+        document.getElementById('mapIcon').addEventListener('click', () => {
+            if (currentDestination) {
+                const dest = destinations[currentDestination];
+                const mapsUrl = `https://www.google.com/maps?q=${dest.lat},${dest.lng}`;
+                window.open(mapsUrl, '_blank');
+            }
+        });
+    </script>
+</body>
+</html>
