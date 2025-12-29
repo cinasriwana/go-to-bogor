@@ -602,13 +602,7 @@
             // Setup marker events
             setupMarkerEvents();
             
-            // Show AR scene
-            const arScene = document.getElementById('arScene');
-            arScene.style.display = 'block';
             isARActive = true;
-            
-            // Hide splash after short delay
-            setTimeout(hideSplashScreen, 3500);
             updateStatus('AR Ready - Scan Marker');
         }
 
@@ -748,34 +742,23 @@
         }
 
         // ===================== START =====================
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('📱 Step Around Bogor - Checking permissions...');
+        window.addEventListener('load', () => {
+            console.log('📱 Step Around Bogor - App Loading...');
             
-            // Check if camera permission is already granted
-            if (navigator.permissions && navigator.permissions.query) {
-                navigator.permissions.query({ name: 'camera' }).then(result => {
-                    if (result.state === 'granted') {
-                        document.getElementById('splashScreen').style.display = 'flex';
-                        setTimeout(() => {
-                            document.getElementById('splashScreen').style.display = 'none';
-                            initializeAR();
-                        }, 3500);
-                    } else if (result.state === 'prompt') {
-                        document.getElementById('splashScreen').style.display = 'flex';
-                        setTimeout(() => {
-                            document.getElementById('permissionAlert').classList.add('show');
-                        }, 3500);
-                    } else {
-                        document.getElementById('permissionAlert').classList.add('show');
-                    }
-                });
-            } else {
-                // Fallback: just try to initialize
-                document.getElementById('splashScreen').style.display = 'flex';
+            // Show splash screen
+            const splash = document.getElementById('splashScreen');
+            splash.style.display = 'flex';
+            splash.style.opacity = '1';
+            
+            // Auto hide splash and initialize after 3.5 seconds
+            setTimeout(() => {
+                splash.style.opacity = '0';
+                splash.style.transition = 'opacity 0.5s ease-out';
                 setTimeout(() => {
+                    splash.style.display = 'none';
                     initializeAR();
-                }, 3500);
-            }
+                }, 500);
+            }, 3500);
         });
 
         window.addEventListener('beforeunload', () => {
