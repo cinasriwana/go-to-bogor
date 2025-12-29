@@ -5,10 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Step Around Bogor - Virtual Tour Guide AR</title>
     
-    <!-- Three.js (required by AR.js) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    
-    <!-- A-Frame Library -->
+    <!-- A-Frame Library (includes Three.js) -->
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     
     <!-- AR.js Library -->
@@ -447,7 +444,7 @@
             <!-- Image display -->
             <a-image
                 id="mexicoImage"
-                src="assets/fotomexico.jpeg"
+                src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 400'%3E%3Crect fill='%23006b3c' width='600' height='400'/%3E%3Ctext x='300' y='200' font-size='40' fill='white' text-anchor='middle' dominant-baseline='middle'%3ETaman Mexico%3C/text%3E%3Ctext x='300' y='250' font-size='24' fill='%23ff8c00' text-anchor='middle' dominant-baseline='middle'%3EMexican Garden%3C/text%3E%3C/svg%3E"
                 position="0 0 0"
                 scale="2 1.3 1"
                 rotation="0 0 0"
@@ -534,17 +531,17 @@
                 coords: TAMAN_MEXICO_COORDS,
                 instruction: 'Turn Right 30m',
                 images: [
-                    'https://images.unsplash.com/photo-1585868481888-b1409b04b423?w=400&h=300&fit=crop',
-                    'https://images.unsplash.com/photo-1599599810694-b5ac4dd33c86?w=400&h=300&fit=crop'
+                    'https://images.unsplash.com/photo-1585868481888-b1409b04b423?w=600&h=400&fit=crop',
+                    'https://images.unsplash.com/photo-1583846814726-8ce640351b9b?w=600&h=400&fit=crop'
                 ]
             },
             orchid: {
                 name: 'GRIYA ANGGREK',
-                description: 'Griya Anggrek adalah wahana wisata edukasi untuk koleksi, konservasi, dan riset berbagai jenis anggrek, baik spesies asli Indonesia maupun hibrida.',
+                description: 'Griya Anggrek adalah wahana wisata edukasi untuk koleksi, konservasi, dan riset berbagai jenis anggrek, baik spesies asli Indonesia maupun hibrida yang indah dan langka.',
                 coords: { lat: -6.5972, lng: 106.8005 },
                 instruction: 'Go Straight 50m',
                 images: [
-                    'https://images.unsplash.com/photo-1585868481888-b1409b04b423?w=400&h=300&fit=crop'
+                    'https://images.unsplash.com/photo-1568866692244-9f6e70e55144?w=600&h=400&fit=crop'
                 ]
             }
         };
