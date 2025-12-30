@@ -431,8 +431,6 @@
         arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: color_and_matrix; matrixCodeType: 3x3; maxDetectionRate: 60"
         vr-mode-ui="enabled: false"
     >
-        <!-- Camera -->
-        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
         <!-- Marker for Taman Mexico (using hiro preset) -->
         <a-marker
@@ -550,23 +548,6 @@
         let isARActive = false;
         let currentMarker = null;
         let sceneReady = false;
-
-        // ===================== PERMISSION HANDLING =====================
-        async function requestCameraPermission() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'environment' } 
-                });
-                stream.getTracks().forEach(track => track.stop());
-                
-                document.getElementById('permissionAlert').classList.remove('show');
-                console.log('✓ Camera permission granted');
-                initializeAR();
-            } catch (error) {
-                console.error('❌ Camera permission denied:', error);
-                alert('Camera access is required for AR experience');
-            }
-        }
 
         // ===================== SPLASH SCREEN LOGIC =====================
         function hideSplashScreen() {
